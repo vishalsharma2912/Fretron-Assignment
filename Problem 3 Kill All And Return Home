@@ -1,0 +1,157 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+// Define a macro for push_back to simplify adding elements to vectors
+#define pb push_back
+
+// Vector to store all possible paths from the starting position
+vector<vector<pair<int, int>>> all_paths;
+
+// Constant for the maximum size of the matrix
+const int N = 100;
+
+// Matrix to represent the grid; '0' for empty, '1' for soldiers, '2' for the castle
+int mat[N][N];
+
+// Variables to store the starting position (the castle's coordinates)
+int castleX, castleY;
+
+// Function to print the path and describe the actions taken
+void printPath(const vector<pair<int, int>>& path) {
+    // If the path is empty, return immediately
+    if (path.empty()) return;
+    
+    // Print the starting cell, which is the castle's position
+    cout << "1. Starting cell: (" << castleX << "," << castleY << ")" << endl;
+    
+    // Variables to track the previous coordinates as we iterate through the path
+    int prevX = path[0].first;
+    int prevY = path[0].second;
+    
+    // Loop through the path to describe the actions
+    for (size_t i = 1; i < path.size(); ++i) {
+        int x = path[i].first;
+        int y = path[i].second;
+        
+        // If the current cell has a soldier, print "Kill" action
+        if (mat[x][y] == 1) {
+            cout << "Kill at (" << x << "," << y << ")" << endl;
+        } else if (mat[x][y] == 2) {
+            // If the current cell is the castle, print "Return home" and end
+            cout << "Return home" << endl;
+            break;
+        }
+        
+        // Determine if there's a direction change based on previous and current coordinates
+        if (x != prevX || y != prevY) {
+            // Check if the movement is horizontal
+            if (x == prevX) {
+                if (y > prevY) {
+                    // Moving right (commented out to keep the output concise)
+                    // cout << "Move right to (" << x << "," << y << ")" << endl;
+                } else {
+                    // Moving left
+                    // cout << "Move left to (" << x << "," << y << ")" << endl;
+                }
+            } else if (y == prevY) {
+                // Check if the movement is vertical
+                if (x < prevX) {
+                    // Moving up
+                    // cout << "Move up to (" << x << "," << y << ")" << endl;
+                } else {
+                    // Moving down
+                    // cout << "Move down to (" << x << "," << y << ")" << endl;
+                }
+            }
+            
+            // After encountering a soldier, the direction changes as we simulate turning left
+            if (mat[x][y] == 1) {
+                cout << "Then, turn left" << endl;
+            }
+        }
+        
+        // Update previous coordinates
+        prevX = x;
+        prevY = y;
+    }
+}
+
+// Recursive function to find all paths from the starting position
+void paths(int n, vector<pair<int, int>> curr_path, int x, int y, int dir_x, int dir_y) {
+    // Add the current cell to the current path
+    curr_path.pb({x, y});
+    
+    // If the cell is out of bounds, return (end this path)
+    if (x < 0 || y < 0 || x >= n || y >= n) return;
+    
+    // If the current cell is the castle, save the path and return
+    if (mat[x][y] == 2) {
+        all_paths.pb(curr_path);
+        return;
+    }
+    
+    // If the current cell has a soldier
+    if (mat[x][y] == 1) {
+        // Continue in the current direction
+        paths(n, curr_path, x + dir_x, y + dir_y, dir_x, dir_y);
+        
+        // Change direction: if moving vertically, switch to horizontal and vice versa
+        if (dir_x != 0) {
+            dir_y = dir_x;
+            dir_x = 0;
+        } else {
+            dir_x = -dir_y;
+            dir_y = 0;
+        }
+        
+        // Continue in the new direction
+        paths(n, curr_path, x + dir_x, y + dir_y, dir_x, dir_y);
+    }
+    
+    // If the current cell is empty, just move forward
+    if (mat[x][y] == 0) {
+        paths(n, curr_path, x + dir_x, y + dir_y, dir_x, dir_y);
+    }
+}
+
+int main() {
+    int n;
+    cout << "Enter the size of the matrix: ";
+    cin >> n; // Read the size of the matrix
+    
+    // Initialize the matrix with zeros (empty cells)
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            mat[i][j] = 0;
+        }
+    }
+    
+    int num_soldiers;
+    cout << "Enter the number of soldiers: ";
+    cin >> num_soldiers; // Read the number of soldiers
+    cout << "Enter the positions of the soldiers (1) in the format (x, y):" << endl;
+    
+    // Read the positions of the soldiers and set those cells to 1
+    for (int i = 0; i < num_soldiers; i++) {
+        int x, y;
+        cin >> x >> y;
+        mat[x][y] = 1;
+    }
+    
+    cout << "Enter the castle position (x, y): ";
+    cin >> castleX >> castleY; // Read the position of the castle
+    mat[castleX][castleY] = 2; // Set the castle cell to 2
+
+    vector<pair<int, int>> cur_path;
+    
+    // Start finding paths from the starting position (castle) with initial direction right (1, 0)
+    paths(n, cur_path, castleX, castleY, 1, 0);
+    
+    // Print all the paths found
+    for (const auto& path : all_paths) {
+        printPath(path);
+        cout << endl;
+    }
+    
+    return 0;
+}
