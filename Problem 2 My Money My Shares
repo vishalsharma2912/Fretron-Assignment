@@ -1,0 +1,113 @@
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Scanner;
+
+class Person {
+    String name;
+    double paid;         // Amount paid by the person
+    double proportion;   // Proportion of total amount paid by the person
+    List<Integer> apples; // List of apple weights assigned to the person
+
+    Person(String name, double paid) {
+        this.name = name;
+        this.paid = paid;
+        this.proportion = 0.0;
+        this.apples = new ArrayList<>();
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+
+        // Initialize the list of people with their payments
+        List<Person> people = new ArrayList<>();
+        people.add(new Person("Ram", 50));
+        people.add(new Person("Sham", 30));
+        people.add(new Person("Rahim", 20));
+
+        // Initialize the list of apple weights
+        List<Integer> apples = new ArrayList<>();
+        while (true) {
+            System.out.print("Enter apple weight in grams (-1 to stop): ");
+            int weight = scanner.nextInt();
+            if (weight == -1) {
+                break; // Stop taking input if -1 is entered
+            }
+            apples.add(weight); // Add the entered weight to the list
+        }
+
+        // Sort the apples in descending order to prioritize heavier apples first
+        apples.sort(Collections.reverseOrder());
+
+        // Calculate the total amount paid by all people
+        double totalPaid = people.stream().mapToDouble(p -> p.paid).sum();
+
+        // Calculate the proportion of the total amount each person paid
+        for (Person person : people) {
+            person.proportion = person.paid / totalPaid;
+        }
+
+        // Calculate the total weight of all apples
+        double totalWeight = apples.stream().mapToInt(Integer::intValue).sum();
+        int maxWeight = (int) totalWeight;
+
+        // Dynamic programming array to determine possible sums
+        boolean[] dp = new boolean[maxWeight + 1];
+        dp[0] = true; // Base case: zero weight is always possible
+
+        // Populate the dp array to find achievable sums with the given apples
+        for (int apple : apples) {
+            for (int j = maxWeight; j >= apple; j--) {
+                if (dp[j - apple]) {
+                    dp[j] = true; // Mark sum j as achievable
+                }
+            }
+        }
+
+        // Calculate target weights for each person based on their proportion
+        List<Integer> targetWeights = new ArrayList<>();
+        for (Person person : people) {
+            targetWeights.add((int) (person.proportion * totalWeight));
+        }
+
+        // Assign apples to each person based on their target weights
+        List<List<Integer>> assignments = new ArrayList<>();
+        for (int i = 0; i < people.size(); i++) {
+            assignments.add(new ArrayList<>());
+        }
+        boolean[] used = new boolean[apples.size()]; // Track used apples
+
+        for (int i = 0; i < people.size(); i++) {
+            int target = targetWeights.get(i);
+            // Find the nearest achievable weight less than or equal to the target
+            while (target > 0 && !dp[target]) {
+                target--;
+            }
+
+            // Assign apples to the current person
+            for (int j = 0; j < apples.size(); j++) {
+                if (!used[j] && target >= apples.get(j) && dp[target - apples.get(j)]) {
+                    assignments.get(i).add(apples.get(j));
+                    used[j] = true; // Mark the apple as used
+                    target -= apples.get(j); // Decrease the target by the apple's weight
+                }
+            }
+        }
+
+        // Output the assigned apples for each person
+        for (int i = 0; i < people.size(); i++) {
+            Person person = people.get(i);
+            List<Integer> personApples = assignments.get(i);
+            System.out.print(person.name + ": ");
+            for (int j = 0; j < personApples.size(); j++) {
+                System.out.print(personApples.get(j) + "g");
+                if (j < personApples.size() - 1) {
+                    System.out.print(", "); // Add comma between apple weights
+                }
+            }
+            System.out.println(); // New line after each person's assignment
+        }
+    }
+}
